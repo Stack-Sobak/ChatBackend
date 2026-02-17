@@ -1,34 +1,41 @@
 package top.jgroup.chatbackend.controllers;
 
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.*;
+import top.jgroup.chatbackend.entity.dtos.BotSettingsDto;
 import top.jgroup.chatbackend.entity.models.Bot;
 import top.jgroup.chatbackend.entity.models.Chat;
-import top.jgroup.chatbackend.serivces.BotActivationService;
+import top.jgroup.chatbackend.serivces.BotService;
+
+import java.util.List;
+
 
 @RestController
-@RequestMapping("/api/bots")
+@RequestMapping("/bots")
+@RequiredArgsConstructor
 public class BotController {
 
+    private final BotService botService;
 
-    private final BotActivationService activationService;
-
-
-    public BotController(BotActivationService activationService) {
-        Bot bot = new Bot();
-        bot.setBaseUrl("http://localhost:8000");
-        bot.setName("Test Bot");
-
-        this.activationService = activationService;
+    @GetMapping
+    public List<Bot> getAll() {
+        return botService.getAll();
     }
 
+    @PostMapping
+    public Bot create(@RequestBody @Valid BotSettingsDto dto) {
+        return botService.create(dto);
+    }
 
     @PostMapping("/{id}/activate")
     public Chat activate(@PathVariable Long id) {
-        System.out.println("Activating bot with id: " + id);
-        return activationService.activateBot(id);
+        return botService.activate(id);
+    }
+
+    @PostMapping("/{id}/deactivate")
+    public void deactivate(@PathVariable Long id) {
+        botService.deactivate(id);
     }
 }
 

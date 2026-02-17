@@ -13,10 +13,12 @@ public class Bot {
     private Long id;
 
     private String name;
+    private String description;
+
+    private String prePrompt;
 
     private String baseUrl;
 
     private boolean enabled;
-
     private Long privateChatId;
 }
