@@ -20,7 +20,9 @@ public class Chat {
 
     private Long botId;
 
+    @Column(length = 5000)
     private String lastMessage;
+
     private String lastSender;
     private LocalDateTime lastTime;
 }
