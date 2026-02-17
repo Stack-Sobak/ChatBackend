@@ -16,6 +16,7 @@ public class Message {
 
     private Long chatId;
     private String sender;
+    @Column(length = 5000)
     private String content;
     private LocalDateTime timestamp;
 }

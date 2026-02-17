@@ -51,7 +51,6 @@ public class BotSocketHandler extends TextWebSocketHandler {
 
         messageService.saveBotMessage(dto);
 
-        // 👉 найти бота
         WebSocketSession botSession =
                 sessionManager.getBot(dto.getChatId().toString());
 
