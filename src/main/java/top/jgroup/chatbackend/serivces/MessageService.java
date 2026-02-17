@@ -10,11 +10,12 @@ import top.jgroup.chatbackend.entity.enums.ChatType;
 import top.jgroup.chatbackend.entity.models.Bot;
 import top.jgroup.chatbackend.entity.models.Chat;
 import top.jgroup.chatbackend.entity.models.Message;
-import top.jgroup.chatbackend.managers.BotSessionManager;
+import top.jgroup.chatbackend.managers.ChatSessionManager;
 import top.jgroup.chatbackend.repositories.BotRepository;
 import top.jgroup.chatbackend.repositories.ChatRepository;
 import top.jgroup.chatbackend.repositories.MessageRepository;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -25,7 +26,7 @@ public class MessageService {
     private final MessageRepository messageRepository;
     private final ChatRepository chatRepository;
     private final BotRepository botRepository;
-    private final BotSessionManager sessionManager;
+    private final ChatSessionManager sessionManager;
 
     public void handleUserMessage(Long chatId,
                                   SendMessageDto dto) {
@@ -59,7 +60,7 @@ public class MessageService {
 
     private void sendToBot(String botId, String content) {
 
-        WebSocketSession session = sessionManager.get(botId);
+        WebSocketSession session = sessionManager.getBot(botId);
 
         if (session != null && session.isOpen()) {
             try {
@@ -73,9 +74,8 @@ public class MessageService {
         }
     }
 
-    public void saveBotMessage(BotMessageDto dto) {
+    public void saveBotMessage(BotMessageDto dto) throws IOException {
 
-        // 1️⃣ Сохраняем сообщение
         Message message = new Message();
         message.setChatId(dto.getChatId());
         message.setSender(dto.getSender());
@@ -84,7 +84,6 @@ public class MessageService {
 
         messageRepository.save(message);
 
-        // 2️⃣ Обновляем превью чата
         Chat chat = chatRepository.findById(dto.getChatId())
                 .orElseThrow();
 
@@ -93,5 +92,14 @@ public class MessageService {
         chat.setLastTime(LocalDateTime.now());
 
         chatRepository.save(chat);
+
+        List<WebSocketSession> users =
+                sessionManager.getUsers(dto.getChatId());
+
+        for (WebSocketSession user : users) {
+            if (user.isOpen()) {
+                user.sendMessage(new TextMessage(message.toString()));
+            }
+        }
     }
 }

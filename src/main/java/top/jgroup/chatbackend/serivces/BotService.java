@@ -61,10 +61,10 @@ public class BotService {
                 .uri(bot.getBaseUrl() + "/activate")
                 .bodyValue(Map.of(
                         "name", bot.getName(),
-                        "description", bot.getDescription(),
-                        "personality", bot.getPrePrompt(),
+                        "description", bot.getDescription() == null ? "Empty" : bot.getDescription(),
+                        "personality", bot.getPrePrompt() == null ? "Empty" : bot.getPrePrompt(),
                         "participants", List.of("User", bot.getName()),
-                        "llm_provider", "ollama"
+                        "bot_id", bot.getId()
                 ))
                 .retrieve()
                 .bodyToMono(String.class)

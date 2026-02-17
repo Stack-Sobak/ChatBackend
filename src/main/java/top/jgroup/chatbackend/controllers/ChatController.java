@@ -12,7 +12,7 @@ import top.jgroup.chatbackend.serivces.MessageService;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/chats")
+@RequestMapping("/chats")
 @RequiredArgsConstructor
 public class ChatController {
 
