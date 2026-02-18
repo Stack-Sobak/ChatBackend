@@ -6,6 +6,7 @@ import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 import tools.jackson.databind.ObjectMapper;
 import top.jgroup.chatbackend.entity.dtos.BotMessageDto;
+import top.jgroup.chatbackend.entity.dtos.SendMessageDto;
 import top.jgroup.chatbackend.managers.ChatSessionManager;
 import top.jgroup.chatbackend.serivces.MessageService;
 
@@ -28,38 +29,62 @@ public class BotSocketHandler extends TextWebSocketHandler {
     public void afterConnectionEstablished(WebSocketSession session) {
 
         String query = session.getUri().getQuery();
-
         Map<String, String> params = parseQuery(query);
 
-        if ("bot".equals(params.get("type"))) {
-            sessionManager.addBot(params.get("botId"), session);
+        String type = params.get("type");
+        String botId = params.get("botId");
+
+        if ("bot".equals(type)) {
+
+            String path = session.getUri().getPath();
+
+            String scope = path.contains("global")
+                    ? "global"
+                    : "private";
+
+            sessionManager.addBot(botId, scope, session);
         }
 
-        if ("user".equals(params.get("type"))) {
+        if ("user".equals(type)) {
             Long chatId = Long.valueOf(params.get("chatId"));
             sessionManager.addUser(chatId, session);
         }
     }
+
 
     @Override
     protected void handleTextMessage(WebSocketSession session,
                                      TextMessage message) throws Exception {
 
         ObjectMapper mapper = new ObjectMapper();
-        BotMessageDto dto =
-                mapper.readValue(message.getPayload(), BotMessageDto.class);
 
-        messageService.saveBotMessage(dto);
+        String query = session.getUri().getQuery();
+        Map<String, String> params = parseQuery(query);
 
-        WebSocketSession botSession =
-                sessionManager.getBot(dto.getChatId().toString());
+        String type = params.get("type");
 
-        if (botSession != null && botSession.isOpen()) {
-            botSession.sendMessage(
-                    new TextMessage(mapper.writeValueAsString(dto))
-            );
+        if ("user".equals(type)) {
+
+            SendMessageDto dto =
+                    mapper.readValue(message.getPayload(), SendMessageDto.class);
+
+            Long chatId = Long.valueOf(params.get("chatId"));
+
+            messageService.handleUserMessage(chatId, dto);
+
+            return;
+        }
+
+        if ("bot".equals(type)) {
+
+            BotMessageDto dto =
+                    mapper.readValue(message.getPayload(), BotMessageDto.class);
+
+            messageService.saveBotMessage(dto);
         }
     }
+
+
 
 
     private Map<String, String> parseQuery(String query) {

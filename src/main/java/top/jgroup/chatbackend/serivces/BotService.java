@@ -48,13 +48,28 @@ public class BotService {
             throw new RuntimeException("Bot already active");
         }
 
-        Chat chat = new Chat();
-        chat.setType(ChatType.PRIVATE);
-        chat.setBotId(bot.getId());
-        chat = chatRepository.save(chat);
+        Long chatId = bot.getId(); // 🔥 приватный чат = botId
+
+        Chat chat;
+
+        // если чат уже существует — просто берём его
+        if (chatRepository.existsById(chatId)) {
+
+            chat = chatRepository.findById(chatId)
+                    .orElseThrow();
+
+        } else {
+
+            chat = new Chat();
+            chat.setId(chatId);                // 🔥 КЛЮЧЕВОЙ МОМЕНТ
+            chat.setType(ChatType.PRIVATE);
+            chat.setBotId(bot.getId());
+
+            chat = chatRepository.save(chat);
+        }
 
         bot.setEnabled(true);
-        bot.setPrivateChatId(chat.getId());
+        bot.setPrivateChatId(chatId); // можно вообще убрать это поле
         botRepository.save(bot);
 
         webClient.post()
@@ -64,7 +79,9 @@ public class BotService {
                         "description", bot.getDescription() == null ? "Empty" : bot.getDescription(),
                         "personality", bot.getPrePrompt() == null ? "Empty" : bot.getPrePrompt(),
                         "participants", List.of("User", bot.getName()),
-                        "bot_id", bot.getId()
+                        "bot_id", bot.getId(),
+                        "private_chat_id", chatId,
+                        "global_chat_id", 10L   // 🔥 если global = 10
                 ))
                 .retrieve()
                 .bodyToMono(String.class)
